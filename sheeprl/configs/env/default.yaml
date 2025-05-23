@@ -1,5 +1,5 @@
 id: ???
-num_envs: 4
+num_envs: 1
 frame_stack: 1
 sync_env: False
 screen_size: 64
