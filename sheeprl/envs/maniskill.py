@@ -7,6 +7,7 @@ class ManiSkillWrapper(gym.Wrapper):
     def __init__(
         self,
         env_id="PushCube-v1",
+        num_envs=1,                # Number of parallel environments
         obs_mode="state",                # "state" or "rgb"
         control_mode="pd_ee_delta_pos",  # or "pd_joint_delta_pos"
         render_mode="rgb_array",         # Passed to make(), not used in render()
@@ -20,6 +21,7 @@ class ManiSkillWrapper(gym.Wrapper):
         env = gym.make(
             env_id,
             obs_mode=obs_mode,
+            num_envs=num_envs,
             control_mode=control_mode,
             render_mode=render_mode,
             reward_mode=reward_mode,
@@ -39,14 +41,14 @@ class ManiSkillWrapper(gym.Wrapper):
             shape = env.observation_space.shape
             if len(shape) == 2 and shape[0] == 1:
                 shape = (shape[1],)
-            self.observation_space = gym.spaces.Dict({
-                "state": gym.spaces.Box(
-                    low=np.squeeze(env.observation_space.low),
-                    high=np.squeeze(env.observation_space.high),
-                    shape=shape,
-                    dtype=env.observation_space.dtype,
-                )
-            })
+
+            self.observation_space = gym.spaces.Box(
+                low=np.squeeze(env.observation_space.low),
+                high=np.squeeze(env.observation_space.high),
+                shape=shape,
+                dtype=env.observation_space.dtype,
+            )
+
         else:
             raise ValueError("Unsupported observation space format")
 
@@ -61,16 +63,31 @@ class ManiSkillWrapper(gym.Wrapper):
 
     def _process_obs(self, obs):
         if self.obs_mode == "state":
-            obs = np.squeeze(self._to_numpy(obs))
+            obs = self._to_numpy(obs)
+            obs = np.squeeze(obs)
             return obs
+
         elif self.obs_mode == "rgb":
-            rgb = obs.get("sensor_data", {}).get("base_camera", None).get("rgb", None)
+            rgb = obs.get("sensor_data", {}).get("base_camera", {}).get("rgb", None)
             if rgb is None:
-                raise ValueError("Missing sensor_data['base_camera'] in observation")
-            rgb = self._to_numpy(rgb).squeeze()
+                raise ValueError("Missing sensor_data['base_camera']['rgb'] in observation")
+
+            rgb = self._to_numpy(rgb)
+
+            # Remove batch dimension only
+            if rgb.ndim == 4 and rgb.shape[0] == 1:
+                rgb = rgb[0]
+
+            # Transpose if needed (ensure CHW)
+            if rgb.ndim == 3 and rgb.shape[-1] == 3:
+                rgb = np.transpose(rgb, (2, 0, 1))
+
+            # Final sanity check
+            if rgb.shape != (3, 128, 128):
+                raise ValueError(f"Unexpected RGB shape: {rgb.shape}")
+
             return rgb
-        else:
-            raise ValueError(f"Unsupported obs_mode: {self.obs_mode}")
+
 
     def reset(self, *, seed=None, options=None):
         obs, info = self.env.reset(seed=seed, options=options)
@@ -110,4 +127,3 @@ class ManiSkillWrapper(gym.Wrapper):
 
     def close(self):
         self.env.close()
-

@@ -2,13 +2,12 @@
 
 defaults:
   - override /algo: ppo
-  - override /env: gym
+  - override /env: maniskill
   - _self_
 
 # Environment
 env:
-  capture_video: False
-  num_envs: 1
+  capture_video: True
   sync_env: True
 
 # Algorithm
@@ -19,12 +18,6 @@ algo:
   max_grad_norm: 0.5
   rollout_steps: 128
   normalize_advantages: True
-  encoder:
-    mlp_features_dim: null
-  actor:
-    mlp_layers: 0
-  critic:
-    mlp_layers: 0
   optimizer:
     lr: 3e-4
     eps: 1e-5
@@ -37,6 +30,26 @@ algo:
   total_steps: 65536
   mlp_keys:
     encoder: [state]
+  encoder:                                                                                                                                                                                                                                                                       
+    cnn_features_dim: null                                                                                                                                                                                                                                                         
+    mlp_features_dim: 64                                                                                                                                                                                                                                                       
+    dense_units: 64                                                                                                                                                                                                                                                              
+    mlp_layers: 2                                                                                                                                                                                                                                                                
+    dense_act: torch.nn.Tanh                                                                                                                                                                                                                                                     
+    layer_norm: false                                                                                                                                                                                                                                                            
+    ortho_init: false                                                                                                                                                                                                                                                            
+  actor:                                                                                                                                                                                                                                                                         
+    dense_units: 64                                                                                                                                                                                                                                                              
+    mlp_layers: 0                                                                                                                                                                                                                                                                
+    dense_act: torch.nn.Tanh                                                                                                                                                                                                                                                     
+    layer_norm: false                                                                                                                                                                                                                                                            
+    ortho_init: false                                                                                                                                                                                                                                                            
+  critic:                                                                                                                                                                                                                                                                        
+    dense_units: 64                                                                                                                                                                                                                                                              
+    mlp_layers: 0                                                                                                                                                                                                                                                                
+    dense_act: torch.nn.Tanh                                                                                                                                                                                                                                                     
+    layer_norm: false                                                                                                                                                                                                                                                            
+    ortho_init: false  
 
 # Buffer
 buffer:
@@ -46,7 +59,7 @@ buffer:
 
 fabric:
   devices: 1
-  accelerator: cpu
+  accelerator: cuda
 
 checkpoint:
   every: 70000
