@@ -2,21 +2,32 @@
 
 defaults:
   - override /algo: sac
-  - override /env: gym
+  - override /env: maniskill
   - override /model_manager: sac
   - _self_
 
 # Algorithm
 algo:
-  total_steps: 1000000
-  per_rank_batch_size: 256
+  total_steps: 250000
+  per_rank_batch_size: 1024
   mlp_keys:
     encoder: [state]
     decoder: [state]
+  cnn_keys:
+    encoder: []
+    decoder: []
+
+  # Entropy coefficient
+  alpha:
+    alpha: 0.2
+    optimizer:
+      lr: 3e-4
+      eps: 1e-4
+  gamma: 0.8
 
 # Checkpoint
 checkpoint:
-  every: 50000
+  every: 5000
 
 # Buffer
 buffer:
@@ -24,9 +35,6 @@ buffer:
   checkpoint: True
   sample_next_obs: False
 
-# Environment
-env:
-  id: LunarLanderContinuous-v2
 
 metric:
   aggregator:

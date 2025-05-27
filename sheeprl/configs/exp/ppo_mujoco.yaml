@@ -6,10 +6,6 @@ defaults:
   - override /model_manager: ppo
   - _self_
 
-# Env
-env:
-  id: Hopper-v4
-  num_envs: 1
 
 # Checkpoint
 checkpoint:

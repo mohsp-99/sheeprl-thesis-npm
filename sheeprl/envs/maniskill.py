@@ -1,17 +1,17 @@
 import gymnasium as gym
 import numpy as np
 import torch
+from mani_skill.utils.wrappers.gymnasium import CPUGymWrapper
 import mani_skill.envs  # registers environments
 
 class ManiSkillWrapper(gym.Wrapper):
     def __init__(
         self,
         env_id="PushCube-v1",
-        num_envs=1,                # Number of parallel environments
         obs_mode="state",                # "state" or "rgb"
         control_mode="pd_ee_delta_pos",  # or "pd_joint_delta_pos"
         render_mode="rgb_array",         # Passed to make(), not used in render()
-        reward_mode="dense",             # "sparse", "dense", etc.
+        reward_mode="normalized_dense",             # "sparse", "dense", etc.
         record_video=False,
     ):
         self.obs_mode = obs_mode
@@ -21,37 +21,13 @@ class ManiSkillWrapper(gym.Wrapper):
         env = gym.make(
             env_id,
             obs_mode=obs_mode,
-            num_envs=num_envs,
             control_mode=control_mode,
             render_mode=render_mode,
             reward_mode=reward_mode,
         )
+        env = CPUGymWrapper(env)
         super().__init__(env)
-
-        # Determine and normalize observation space
-        if obs_mode == "rgb":
-            self.observation_space = gym.spaces.Box(
-                low=0,
-                high=255,
-                shape=(3, 128, 128),
-                dtype=np.uint8
-            )
-
-        elif isinstance(env.observation_space, gym.spaces.Box):
-            shape = env.observation_space.shape
-            if len(shape) == 2 and shape[0] == 1:
-                shape = (shape[1],)
-
-            self.observation_space = gym.spaces.Box(
-                low=np.squeeze(env.observation_space.low),
-                high=np.squeeze(env.observation_space.high),
-                shape=shape,
-                dtype=env.observation_space.dtype,
-            )
-
-        else:
-            raise ValueError("Unsupported observation space format")
-
+        
         self.action_space = env.action_space
         self.reward_range = (-np.inf, np.inf)
         self._metadata = {"render_fps": 20}
@@ -98,10 +74,9 @@ class ManiSkillWrapper(gym.Wrapper):
         obs, reward, terminated, truncated, info = self.env.step(action)
         obs = self._process_obs(obs)
 
-        reward = self._to_numpy(reward).item()
+        reward = self._to_numpy(reward)
         terminated = bool(self._to_numpy(terminated))
         truncated = bool(self._to_numpy(truncated))
-
         return obs, reward, terminated, truncated, info
 
     def render(self):

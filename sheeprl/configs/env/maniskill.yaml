@@ -3,18 +3,15 @@ defaults:
   - _self_
 
 id: PushCube-v1
-num_envs: 1
+num_envs: 8
 action_repeat: 1
 frame_stack: 1
-max_episode_steps: 200
-capture_video: True
+capture_video: False
 sync_env: True
 
 wrapper:
   _target_: sheeprl.envs.maniskill.ManiSkillWrapper
   env_id: ${env.id}
   obs_mode: state
-  num_envs: ${env.num_envs}
-  control_mode: pd_ee_delta_pos
+  control_mode: pd_joint_delta_pos
   render_mode: rgb_array
-  reward_mode: dense

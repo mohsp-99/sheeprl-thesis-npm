@@ -1,24 +1,111 @@
 # @package _global_
 
 defaults:
-  - override /algo: dreamer_v3_S
-  - override /env: atari
+  - override /algo: dreamer_v3_L
+  - override /env: maniskill
   - override /model_manager: dreamer_v3
   - _self_
 
 # Algorithm
 algo:
-  replay_ratio: 1
-  total_steps: 5000000
-  per_rank_batch_size: 16
-  per_rank_sequence_length: 64
+  replay_ratio: 0.05
+  total_steps: 100000
+  per_rank_batch_size: 64
+  per_rank_sequence_length: 32
   cnn_keys:
-    encoder: [rgb]
-    decoder: [rgb]
+    encoder: []
+    decoder: []
+  mlp_keys:
+    encoder: [state]
+    decoder: [state]
+  gamma: 0.99
+  dense_units: 384
+  mlp_layers: 5
+
+  horizon: 16
+
+  # World model
+  world_model:
+    discrete_size: 32
+    stochastic_size: 32
+    kl_dynamic: 0.5
+    kl_representation: 0.1
+    kl_free_nats: 1.0
+    kl_regularizer: 1.0
+    continue_scale_factor: 1.0
+    clip_gradients: 1000.0
+    decoupled_rssm: False
+    learnable_initial_recurrent_state: True
+
+    # Encoder
+    encoder:
+      cnn_channels_multiplier: 96
+      cnn_act: ${algo.cnn_act}
+      dense_act: ${algo.dense_act}
+      mlp_layers: ${algo.mlp_layers}
+      cnn_layer_norm: ${algo.cnn_layer_norm}
+      mlp_layer_norm: ${algo.mlp_layer_norm}
+      dense_units: ${algo.dense_units}
+
+    # Recurrent model
+    recurrent_model:
+      recurrent_state_size: 4096
+      layer_norm: ${algo.mlp_layer_norm}
+      dense_units: ${algo.dense_units}
+
+    # Prior
+    transition_model:
+      hidden_size: 1024
+      dense_act: ${algo.dense_act}
+      layer_norm: ${algo.mlp_layer_norm}
+
+    # Posterior
+    representation_model:
+      hidden_size: 1024
+      dense_act: ${algo.dense_act}
+      layer_norm: ${algo.mlp_layer_norm}
+
+    # Decoder
+    observation_model:
+      cnn_channels_multiplier: ${algo.world_model.encoder.cnn_channels_multiplier}
+      cnn_act: ${algo.cnn_act}
+      dense_act: ${algo.dense_act}
+      mlp_layers: 1
+      cnn_layer_norm: ${algo.cnn_layer_norm}
+      mlp_layer_norm: ${algo.mlp_layer_norm}
+      dense_units: ${algo.dense_units}
+
+    # Reward model
+    reward_model:
+      dense_act: ${algo.dense_act}
+      mlp_layers: 1
+      layer_norm: ${algo.mlp_layer_norm}
+      dense_units: ${algo.dense_units}
+      bins: 255
+
+    # Discount model
+    discount_model:
+      learnable: True
+      dense_act: ${algo.dense_act}
+      mlp_layers: 1
+      layer_norm: ${algo.mlp_layer_norm}
+      dense_units: ${algo.dense_units}
+
+    # World model optimizer
+    optimizer:
+      lr: 8e-5
+      eps: 1e-8
+      weight_decay: 0
+  Actor:
+    optimizer:
+      lr: 8e-5
+
+
+
 
 # Checkpoint
 checkpoint:
-  every: 100000
+  every: 5000
 
 # Buffer
 buffer:
@@ -29,7 +116,12 @@ buffer:
 distribution:
   type: "auto"
 
+fabric:
+  precision: bf16-mixed
+
+
 metric:
+  log_every: 100
   aggregator:
     metrics:
       Loss/world_model_loss:

@@ -7,4 +7,4 @@ run_test: True
 cnn_keys:
   encoder: []
 mlp_keys:
-  encoder: []
+  encoder: [state]

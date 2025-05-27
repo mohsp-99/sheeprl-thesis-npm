@@ -8,10 +8,20 @@ defaults:
 
 # Algorithm
 algo:
-  total_steps: 65536
-  per_rank_batch_size: 64
+  total_steps: 1500000
+  per_rank_batch_size: 32
   mlp_keys:
     encoder: [state]
+  cnn_keys:
+    encoder: []
+  gamma: 0.8
+  vf_coef: 0.5
+  update_epochs: 4
+  dense_units: 256
+  mlp_layers: 3
+
+
+
 
 # Distribution
 distribution:
@@ -21,6 +31,10 @@ distribution:
 buffer:
   share_data: False
   size: ${algo.rollout_steps}
+
+optimizer:
+  lr: 3e-4
+  eps: 1e-4
 
 metric:
   aggregator:
